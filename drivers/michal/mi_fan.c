@@ -10,11 +10,9 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include <linux/pwm.h>
 #include "mi_fan_sysfs.h"
 #include "mi_fan.h"
-
-
-
 
 
 static int mi_fan_probe(struct platform_device *pdev)
@@ -22,8 +20,8 @@ static int mi_fan_probe(struct platform_device *pdev)
 	int gpio;
 	int ret;
 	struct device_node *np = pdev->dev.of_node;
-
 	struct mi_fan_device_priv *priv;
+	struct pwm_state state = { };
 
 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
@@ -32,13 +30,14 @@ static int mi_fan_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, priv);
 	priv->pdev = pdev;
 
+	/* GPIO */
 	gpio = of_get_named_gpio(np, "fan-gpios", 0);
 	if (!gpio_is_valid(gpio))
 		return -ENODEV;
 
 	dev_info(&pdev->dev, "%s: gpio: %d", __func__, gpio);
 
-	ret = gpio_request(gpio, "mi_fan");
+	ret = devm_gpio_request(&pdev->dev, gpio, "mi_fan");
 	if (ret < 0) {
 		dev_err(&pdev->dev,
 			"request gpio failed, ret: %d\n", ret);
@@ -46,6 +45,29 @@ static int mi_fan_probe(struct platform_device *pdev)
 	}
 	priv->gpio = gpio;
 
+	/* PWM */
+	priv->pwm = devm_of_pwm_get(&pdev->dev, np, NULL);
+
+	dev_info(&pdev->dev, "%s", __func__);
+	if (IS_ERR(priv->pwm))
+		return dev_err_probe(&pdev->dev, PTR_ERR(priv->pwm), "Could not get PWM\n");
+
+
+	dev_info(&pdev->dev, "%s: pwm period: %lld", __func__, priv->pwm->args.period);
+
+	pwm_init_state(priv->pwm, &state);
+
+	/* Set duty cycle to 0 to run the fan at full speed*/
+	state.duty_cycle = 0;
+	state.enabled = true;
+
+	ret = pwm_apply_state(priv->pwm, &state);
+	if (ret) {
+		dev_err(&pdev->dev, "Failed to configure PWM: %d\n", ret);
+		return ret;
+	}
+
+	/* SYSFS */
 	ret = mi_fan_sysfs_init(pdev);
 	if (ret) {
 		dev_err(&pdev->dev,
@@ -65,6 +87,8 @@ static int mi_fan_remove(struct platform_device *pdev)
 
 	gpio_free(priv->gpio);
 
+	pwm_disable(priv->pwm);
+
 	mi_fan_sysfs_remove(pdev);
 
     return 0;
@@ -73,6 +97,11 @@ static int mi_fan_remove(struct platform_device *pdev)
 
 int mi_fan_suspend(struct device *dev)
 {
+	int ret;
+	struct pwm_args args;
+	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
+	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+
 	/*	Although the driver core handles selection of the default state
 	* during the initial probe of the driver, some extra work may be
 	* needed within the driver to make sure the sleep state is selected
@@ -118,12 +147,32 @@ int mi_fan_suspend(struct device *dev)
 		dev_info(dev, "%s: suspending, standby", __func__);
 	}
 
+
+	pwm_get_args(priv->pwm, &args);
+
+	ret = pwm_config(priv->pwm, 0, args.period);
+	if (ret < 0)
+		return ret;
+
+	pwm_disable(priv->pwm);
+
 	return 0;
 }
 
 int mi_fan_resume(struct device *dev)
 {
+	int ret;
+	struct pwm_args args;
+	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
+	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+
 	dev_info(dev, "%s: resuming", __func__);
+
+	pwm_get_args(priv->pwm, &args);
+	ret = pwm_config(priv->pwm, args.period - 1, args.period);
+	if (ret)
+		return ret;
+	return pwm_enable(priv->pwm);
 
 	if (pm_suspend_target_state == PM_SUSPEND_MEM)
 		pinctrl_pm_select_default_state(dev);
