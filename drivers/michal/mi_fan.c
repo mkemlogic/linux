@@ -8,6 +8,8 @@
 #include <linux/pm.h>
 #include <linux/suspend.h>
 #include <linux/pinctrl/consumer.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 
 
 
@@ -15,6 +17,15 @@
 
 static int mi_fan_probe(struct platform_device *dev)
 {
+	int gpio;
+	struct device_node *np = dev->dev.of_node;
+
+	gpio = of_get_named_gpio(np, "fan-gpios", 0);
+	if (!gpio_is_valid(gpio))
+		return -ENODEV;
+
+	dev_info(&dev->dev, "%s: gpio: %d", __func__, gpio);
+
 	pinctrl_pm_select_default_state(&dev->dev);
 
 	return 0;
