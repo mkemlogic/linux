@@ -47,8 +47,11 @@ static int mi_fan_probe(struct platform_device *pdev)
 	priv->gpio = gpio;
 
 	ret = mi_fan_sysfs_init(pdev);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev,
+			"sysfs init failed, ret: %d\n", ret);
 		return ret;
+	}
 
 	pinctrl_pm_select_default_state(&pdev->dev);
 
