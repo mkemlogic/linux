@@ -18,6 +18,7 @@
 static int mi_fan_probe(struct platform_device *dev)
 {
 	int gpio;
+	int ret;
 	struct device_node *np = dev->dev.of_node;
 
 	gpio = of_get_named_gpio(np, "fan-gpios", 0);
@@ -25,6 +26,13 @@ static int mi_fan_probe(struct platform_device *dev)
 		return -ENODEV;
 
 	dev_info(&dev->dev, "%s: gpio: %d", __func__, gpio);
+
+	ret = gpio_request(gpio, "mi_fan");
+	if (ret < 0) {
+		dev_err(&dev->dev,
+			"request gpio failed, ret: %d\n", ret);
+		return ret;
+	}
 
 	pinctrl_pm_select_default_state(&dev->dev);
 
