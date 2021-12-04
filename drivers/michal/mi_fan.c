@@ -15,6 +15,8 @@
 
 static int mi_fan_probe(struct platform_device *dev)
 {
+	pinctrl_pm_select_default_state(&dev->dev);
+
 	return 0;
 }
 
@@ -41,25 +43,30 @@ int mi_fan_suspend(struct device *dev)
 	* is added a default state must be added as well in order for the resume
 	* path to be able to properly reconfigure the pins.
 	*
-	* epd_pmic: mi_fan@62 {
-	*	compatible = "mi,mi_fan";
-	*	reg = <0x62>;
-	*	status = "okay";
-	*	pinctrl-names = "default", "sleep";   <------
-	*	pinctrl-0 = <&pinctrl_epdpmic>;       <------ same pin state for default and sleep
-	*	pinctrl-1 = <&pinctrl_epdpmic>;       <------ in this case.
-	* };
+	mi_fan: mi_fan {
+		compatible = "mi,mi_fan";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mi_fan_pins_default>;
+		pinctrl-1 = <&mi_fan_pins_sleep>;
 
-	* pinctrl_epdpmic: epdpmicgrp {
-	*	fsl,pins = <
-	*		MX7D_PAD_SAI2_RX_DATA__GPIO6_IO21 0x00000074
-	*		MX7D_PAD_ENET1_RGMII_TXC__GPIO7_IO11 0x00000014
-	*		MX7D_PAD_SAI1_MCLK__GPIO6_IO18 0x00000074
-	*	>;
-	*};
+		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+
+		status = "okay";
+	};
+
+	mi_fan_pins_default: mi_fan_pins_default {
+		brcm,pins = <21>;
+		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
+		brcm,pull = <BCM2835_PUD_OFF>;
+	};
+
+	mi_fan_pins_sleep: mi_fan_pins_sleep {
+		brcm,pins = <21>;
+		brcm,function = <BCM2835_FSEL_GPIO_IN>;
+		brcm,pull = <BCM2835_PUD_UP>;
+	};
 	*/
-
-	if (pm_suspend_target_state == PM_SUSPEND_MEM){
+	if (pm_suspend_target_state == PM_SUSPEND_MEM || pm_suspend_target_state == PM_SUSPEND_TO_IDLE){
 		dev_info(dev, "%s: suspending to RAM", __func__);
 
 		pinctrl_pm_select_sleep_state(dev);
