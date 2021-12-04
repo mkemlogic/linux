@@ -2,7 +2,8 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
+#include <linux/of_device.h>
 #include <linux/sysfs.h>
 #include <linux/pm.h>
 #include <linux/suspend.h>
@@ -10,77 +11,18 @@
 
 
 
-#if 0
-static int mi_fan_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
-{
-
-	int ret;
-	struct mi_fan_device *mi_fan_device;
-
-	dev_info(&client->dev, "%s: ", __func__);
-
-	/* Managed kzalloc. Memory allocated with this function is automatically
-	 * freed on driver detach. Like all other devres resources,
-	 * guaranteed alignment is unsigned long long.
-	 */
-	mi_fan_device = devm_kzalloc(&client->dev, sizeof(struct mi_fan_device), GFP_KERNEL);
-	if (mi_fan_device == NULL)
-		return -ENOMEM;
-
-	mi_fan_device->dev = &client->dev;
-
-	/* Each client structure has a special data field that can point to
-	 * any structure at all. You should use this to keep device-specific data.
-	 */
-	i2c_set_clientdata(client, mi_fan_device);
-
-	ret = mi_fan_sysfs_init(client);
-	if (ret)
-		return ret;
-
-	mi_fan_transfer_test(client);
-
-	mi_fan_device->regmap = devm_regmap_init_i2c(client, &mi_fan_regmap_cfg);
-	if (IS_ERR(mi_fan_device->regmap)) {
-		ret = PTR_ERR(mi_fan_device->regmap);
-		dev_err(mi_fan_device->dev,
-			"Failed to initialize register map: %d\n", ret);
-		return ret;
-	}
-	return 0;
-
-}
-
-static int mi_fan_remove(struct i2c_client *client)
-{
-    dev_info(&client->dev, "%s: ", __func__);
-
-	mi_fan_sysfs_remove(client);
-
-	return 0;
-}
-
-#endif
 
 
-static int mi_fan_probe(struct platform_device *platform)
+static int mi_fan_probe(struct platform_device *dev)
 {
 	return 0;
 }
 
 
-static int mi_fan_remove(struct platform_device *platform)
+static int mi_fan_remove(struct platform_device *dev)
 {
     return 0;
 }
-
-
-static const struct of_device_id mi_fan_of_match[] = {
-	{ .compatible = "mi,mi_fan", },
-	{}
-};
-MODULE_DEVICE_TABLE(of, mi_fan_of_match);
 
 
 int mi_fan_suspend(struct device *dev)
@@ -143,21 +85,36 @@ static struct dev_pm_ops dev_pm_ops = {
         .suspend       = mi_fan_suspend,
 };
 
-static struct platform_driver mi_fan_driver = {
-	.driver = {
-		   .name = "mi_fan",
-		   .of_match_table = of_match_ptr(mi_fan_of_match),
-		   .pm = &dev_pm_ops,
-		   },
-	.probe = mi_fan_probe,
-	.remove = mi_fan_remove,
+static const struct of_device_id mi_fan_of_match[] = {
+	{ .compatible = "mi,mi_fan", },
+	{}
+};
+MODULE_DEVICE_TABLE(of, mi_fan_of_match);
+
+/*
+ * bind and unbind driver manually from userspace:
+ * echo mi_fan > /sys/bus/platform/drivers/mi_fan/bind
+ * echo mi_fan > /sys/bus/platform/drivers/mi_fan/unbind
+ */
+static const struct platform_device_id mi_fan_id_table[] = {
+	{"mi_fan"},
+	{},
 };
 
+static struct platform_driver mi_fan_driver = {
+	.probe = mi_fan_probe,
+	.remove = mi_fan_remove,
+	.id_table = mi_fan_id_table,
+	.driver = {
+		.name = "mi_fan",
+		.of_match_table = mi_fan_of_match,
+		.pm = &dev_pm_ops,
+	},
+};
 module_platform_driver(mi_fan_driver);
-
 
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Michal Koziel");
-MODULE_DESCRIPTION("A simple example Linux i2c module.");
+MODULE_DESCRIPTION("rpi fan control module.");
 MODULE_VERSION("0.01");
