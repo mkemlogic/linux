@@ -77,6 +77,8 @@
 
 		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
+		pwms = <&pwm 0 500000>;
+		max-brightness = <255>;
 		status = "okay";
 	};
 };
@@ -220,6 +222,12 @@
 };
 
 &pixelvalve4 {
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_0_gpio12>;
 	status = "okay";
 };
 
