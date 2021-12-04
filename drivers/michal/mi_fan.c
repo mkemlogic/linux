@@ -10,38 +10,60 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
+#include "mi_fan_sysfs.h"
+#include "mi_fan.h"
 
 
 
 
 
-static int mi_fan_probe(struct platform_device *dev)
+static int mi_fan_probe(struct platform_device *pdev)
 {
 	int gpio;
 	int ret;
-	struct device_node *np = dev->dev.of_node;
+	struct device_node *np = pdev->dev.of_node;
+
+	struct mi_fan_device_priv *priv;
+
+	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	platform_set_drvdata(pdev, priv);
+	priv->pdev = pdev;
 
 	gpio = of_get_named_gpio(np, "fan-gpios", 0);
 	if (!gpio_is_valid(gpio))
 		return -ENODEV;
 
-	dev_info(&dev->dev, "%s: gpio: %d", __func__, gpio);
+	dev_info(&pdev->dev, "%s: gpio: %d", __func__, gpio);
 
 	ret = gpio_request(gpio, "mi_fan");
 	if (ret < 0) {
-		dev_err(&dev->dev,
+		dev_err(&pdev->dev,
 			"request gpio failed, ret: %d\n", ret);
 		return ret;
 	}
+	priv->gpio = gpio;
 
-	pinctrl_pm_select_default_state(&dev->dev);
+	ret = mi_fan_sysfs_init(pdev);
+	if (ret)
+		return ret;
+
+	pinctrl_pm_select_default_state(&pdev->dev);
 
 	return 0;
 }
 
 
-static int mi_fan_remove(struct platform_device *dev)
+static int mi_fan_remove(struct platform_device *pdev)
 {
+	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+
+	gpio_free(priv->gpio);
+
+	mi_fan_sysfs_remove(pdev);
+
     return 0;
 }
 
