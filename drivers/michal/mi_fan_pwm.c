@@ -162,7 +162,7 @@ int mi_fan_pwm_resume(struct device *dev)
 		return ret;
 	return pwm_enable(priv->pwm);
 
-	if (pm_suspend_target_state == PM_SUSPEND_MEM)
+	if (pm_suspend_target_state == PM_SUSPEND_MEM || pm_suspend_target_state == PM_SUSPEND_TO_IDLE)
 		pinctrl_pm_select_default_state(dev);
 
 	return 0;
