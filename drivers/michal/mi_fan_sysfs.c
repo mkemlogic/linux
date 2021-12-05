@@ -1,7 +1,7 @@
 #include <linux/module.h>
 #include <linux/sysfs.h>
 #include <linux/platform_device.h>
-#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
 #include "mi_fan_sysfs.h"
 #include "mi_fan.h"
 
@@ -13,13 +13,11 @@ static ssize_t fan_gpio_value_store(struct device *dev, struct device_attribute 
 	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
 
 	if (buf[0] == '0') {
-		gpio_set_value(priv->gpio, 0);
-		dev_info(dev, "%s: gpio:%d, value:%d", __func__, priv->gpio, 0);
+		gpiod_set_value(priv->gpio_desc, 0);
 	}
 
 	if (buf[0] == '1') {
-		gpio_set_value(priv->gpio, 1);
-		dev_info(dev, "%s: gpio:%d, value:%d", __func__, priv->gpio, 1);
+		gpiod_set_value(priv->gpio_desc, 1);
 	}
 
 	return count;

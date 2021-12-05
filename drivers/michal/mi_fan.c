@@ -8,8 +8,7 @@
 #include <linux/pm.h>
 #include <linux/suspend.h>
 #include <linux/pinctrl/consumer.h>
-#include <linux/gpio.h>
-#include <linux/of_gpio.h>
+#include <linux/gpio/consumer.h>
 #include <linux/pwm.h>
 #include "mi_fan_sysfs.h"
 #include "mi_fan.h"
@@ -17,7 +16,7 @@
 
 static int mi_fan_probe(struct platform_device *pdev)
 {
-	int gpio;
+	struct gpio_desc *gpio_desc;
 	int ret;
 	struct device_node *np = pdev->dev.of_node;
 	struct mi_fan_device_priv *priv;
@@ -31,24 +30,16 @@ static int mi_fan_probe(struct platform_device *pdev)
 	priv->pdev = pdev;
 
 	/* GPIO */
-	gpio = of_get_named_gpio(np, "fan-gpios", 0);
-	if (!gpio_is_valid(gpio))
-		return -ENODEV;
-
-	dev_info(&pdev->dev, "%s: gpio: %d", __func__, gpio);
-
-	ret = devm_gpio_request(&pdev->dev, gpio, "mi_fan");
-	if (ret < 0) {
+	gpio_desc = devm_gpiod_get_from_of_node(&pdev->dev, np, "fan-gpios", 0, GPIOD_OUT_HIGH, "fan-gpio");
+	if (IS_ERR(gpio_desc))
 		dev_err(&pdev->dev,
-			"request gpio failed, ret: %d\n", ret);
-		return ret;
-	}
-	priv->gpio = gpio;
+			"getting gpio failed, ret: %d\n", ret);
+
+	priv->gpio_desc = gpio_desc;
 
 	/* PWM */
 	priv->pwm = devm_of_pwm_get(&pdev->dev, np, NULL);
 
-	dev_info(&pdev->dev, "%s", __func__);
 	if (IS_ERR(priv->pwm))
 		return dev_err_probe(&pdev->dev, PTR_ERR(priv->pwm), "Could not get PWM\n");
 
@@ -84,8 +75,6 @@ static int mi_fan_probe(struct platform_device *pdev)
 static int mi_fan_remove(struct platform_device *pdev)
 {
 	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
-
-	gpio_free(priv->gpio);
 
 	pwm_disable(priv->pwm);
 
@@ -146,7 +135,6 @@ int mi_fan_suspend(struct device *dev)
 	}else{
 		dev_info(dev, "%s: suspending, standby", __func__);
 	}
-
 
 	pwm_get_args(priv->pwm, &args);
 
