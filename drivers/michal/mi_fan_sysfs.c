@@ -25,8 +25,36 @@ static ssize_t fan_gpio_value_store(struct device *dev, struct device_attribute 
 
 static DEVICE_ATTR(fan_gpio_value, 0644, NULL, fan_gpio_value_store);
 
+static ssize_t fan_pwm_duty_store(struct device *dev, struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
+	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+	unsigned long duty;
+	int ret;
+
+	ret = kstrtol(buf, 10, &duty);
+	if (ret < 0)
+		return count;
+
+	if (duty > priv->pwm->args.period) {
+		dev_info(&pdev->dev, "Max duty cycle is: %lld\n", priv->pwm->args.period);
+		return count;
+	}
+
+	dev_info(&pdev->dev, "New duty cycle: %ld\n", duty);
+
+	pwm_config(priv->pwm, duty, priv->pwm->args.period);
+
+	return count;
+
+}
+
+static DEVICE_ATTR(fan_pwm_duty, 0644, NULL, fan_pwm_duty_store);
+
 static struct attribute *mi_fan_attrs[] = {
-	&dev_attr_fan_gpio_value.attr,	
+	&dev_attr_fan_gpio_value.attr,
+	&dev_attr_fan_pwm_duty.attr,
 	NULL,
 };
 
