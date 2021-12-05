@@ -22,10 +22,10 @@ static ssize_t fan_gpio_value_store(struct device *dev, struct device_attribute 
 
 	return count;
 }
-
 static DEVICE_ATTR(fan_gpio_value, 0644, NULL, fan_gpio_value_store);
 
-static ssize_t fan_pwm_duty_store(struct device *dev, struct device_attribute *attr,
+
+static ssize_t fan1_input_store(struct device *dev, struct device_attribute *attr,
 					const char *buf, size_t count)
 {
 	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
@@ -47,14 +47,33 @@ static ssize_t fan_pwm_duty_store(struct device *dev, struct device_attribute *a
 	pwm_config(priv->pwm, duty, priv->pwm->args.period);
 
 	return count;
-
 }
+static DEVICE_ATTR(fan1_input, 0644, NULL, fan1_input_store);
 
-static DEVICE_ATTR(fan_pwm_duty, 0644, NULL, fan_pwm_duty_store);
+
+static ssize_t fan1_min_show(struct device *dev, struct device_attribute *attr,
+						char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "0\n");
+}
+static DEVICE_ATTR(fan1_min, 0644, fan1_min_show, NULL);
+
+
+static ssize_t fan1_max_show(struct device *dev, struct device_attribute *attr,
+						char *buf)
+{
+	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
+	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+
+	return scnprintf(buf, PAGE_SIZE, "%lld\n", priv->pwm->args.period);
+}
+static DEVICE_ATTR(fan1_max, 0644, fan1_max_show, NULL);
 
 static struct attribute *mi_fan_attrs[] = {
 	&dev_attr_fan_gpio_value.attr,
-	&dev_attr_fan_pwm_duty.attr,
+	&dev_attr_fan1_input.attr,
+	&dev_attr_fan1_min.attr,
+	&dev_attr_fan1_max.attr,
 	NULL,
 };
 
