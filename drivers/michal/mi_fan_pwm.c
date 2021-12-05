@@ -10,16 +10,16 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/gpio/consumer.h>
 #include <linux/pwm.h>
-#include "mi_fan_sysfs.h"
-#include "mi_fan.h"
+#include "mi_fan_pwm_sysfs.h"
+#include "mi_fan_pwm.h"
 
 
-static int mi_fan_probe(struct platform_device *pdev)
+static int mi_fan_pwm_probe(struct platform_device *pdev)
 {
 	struct gpio_desc *gpio_desc;
 	int ret;
 	struct device_node *np = pdev->dev.of_node;
-	struct mi_fan_device_priv *priv;
+	struct mi_fan_pwm_device_priv *priv;
 	struct pwm_state state = { };
 
 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
@@ -59,7 +59,7 @@ static int mi_fan_probe(struct platform_device *pdev)
 	}
 
 	/* SYSFS */
-	ret = mi_fan_sysfs_init(pdev);
+	ret = mi_fan_pwm_sysfs_init(pdev);
 	if (ret) {
 		dev_err(&pdev->dev,
 			"sysfs init failed, ret: %d\n", ret);
@@ -72,24 +72,24 @@ static int mi_fan_probe(struct platform_device *pdev)
 }
 
 
-static int mi_fan_remove(struct platform_device *pdev)
+static int mi_fan_pwm_remove(struct platform_device *pdev)
 {
-	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+	struct mi_fan_pwm_device_priv *priv = platform_get_drvdata(pdev);
 
 	pwm_disable(priv->pwm);
 
-	mi_fan_sysfs_remove(pdev);
+	mi_fan_pwm_sysfs_remove(pdev);
 
     return 0;
 }
 
 
-int mi_fan_suspend(struct device *dev)
+int mi_fan_pwm_suspend(struct device *dev)
 {
 	int ret;
 	struct pwm_args args;
 	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
-	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+	struct mi_fan_pwm_device_priv *priv = platform_get_drvdata(pdev);
 
 	/*	Although the driver core handles selection of the default state
 	* during the initial probe of the driver, some extra work may be
@@ -105,24 +105,24 @@ int mi_fan_suspend(struct device *dev)
 	* is added a default state must be added as well in order for the resume
 	* path to be able to properly reconfigure the pins.
 	*
-	mi_fan: mi_fan {
-		compatible = "mi,mi_fan";
+	mi_fan_pwm: mi_fan_pwm {
+		compatible = "mi,mi_fan_pwm";
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&mi_fan_pins_default>;
-		pinctrl-1 = <&mi_fan_pins_sleep>;
+		pinctrl-0 = <&mi_fan_pwm_pins_default>;
+		pinctrl-1 = <&mi_fan_pwm_pins_sleep>;
 
 		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
 		status = "okay";
 	};
 
-	mi_fan_pins_default: mi_fan_pins_default {
+	mi_fan_pwm_pins_default: mi_fan_pwm_pins_default {
 		brcm,pins = <21>;
 		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
 		brcm,pull = <BCM2835_PUD_OFF>;
 	};
 
-	mi_fan_pins_sleep: mi_fan_pins_sleep {
+	mi_fan_pwm_pins_sleep: mi_fan_pwm_pins_sleep {
 		brcm,pins = <21>;
 		brcm,function = <BCM2835_FSEL_GPIO_IN>;
 		brcm,pull = <BCM2835_PUD_UP>;
@@ -147,12 +147,12 @@ int mi_fan_suspend(struct device *dev)
 	return 0;
 }
 
-int mi_fan_resume(struct device *dev)
+int mi_fan_pwm_resume(struct device *dev)
 {
 	int ret;
 	struct pwm_args args;
 	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
-	struct mi_fan_device_priv *priv = platform_get_drvdata(pdev);
+	struct mi_fan_pwm_device_priv *priv = platform_get_drvdata(pdev);
 
 	dev_info(dev, "%s: resuming", __func__);
 
@@ -169,37 +169,37 @@ int mi_fan_resume(struct device *dev)
 }
 
 static struct dev_pm_ops dev_pm_ops = {
-        .resume        = mi_fan_resume,
-        .suspend       = mi_fan_suspend,
+        .resume        = mi_fan_pwm_resume,
+        .suspend       = mi_fan_pwm_suspend,
 };
 
-static const struct of_device_id mi_fan_of_match[] = {
-	{ .compatible = "mi,mi_fan", },
+static const struct of_device_id mi_fan_pwm_of_match[] = {
+	{ .compatible = "mi,mi_fan_pwm", },
 	{}
 };
-MODULE_DEVICE_TABLE(of, mi_fan_of_match);
+MODULE_DEVICE_TABLE(of, mi_fan_pwm_of_match);
 
 /*
  * bind and unbind driver manually from userspace:
- * echo mi_fan > /sys/bus/platform/drivers/mi_fan/bind
- * echo mi_fan > /sys/bus/platform/drivers/mi_fan/unbind
+ * echo mi_fan_pwm > /sys/bus/platform/drivers/mi_fan_pwm/bind
+ * echo mi_fan_pwm > /sys/bus/platform/drivers/mi_fan_pwm/unbind
  */
-static const struct platform_device_id mi_fan_id_table[] = {
-	{"mi_fan"},
+static const struct platform_device_id mi_fan_pwm_id_table[] = {
+	{"mi_fan_pwm"},
 	{},
 };
 
-static struct platform_driver mi_fan_driver = {
-	.probe = mi_fan_probe,
-	.remove = mi_fan_remove,
-	.id_table = mi_fan_id_table,
+static struct platform_driver mi_fan_pwm_driver = {
+	.probe = mi_fan_pwm_probe,
+	.remove = mi_fan_pwm_remove,
+	.id_table = mi_fan_pwm_id_table,
 	.driver = {
-		.name = "mi_fan",
-		.of_match_table = mi_fan_of_match,
+		.name = "mi_fan_pwm",
+		.of_match_table = mi_fan_pwm_of_match,
 		.pm = &dev_pm_ops,
 	},
 };
-module_platform_driver(mi_fan_driver);
+module_platform_driver(mi_fan_pwm_driver);
 
 
 MODULE_LICENSE("GPL");

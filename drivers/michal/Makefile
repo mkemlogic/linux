@@ -5,7 +5,7 @@
 
 ccflags-$(CONFIG_MICHAL_DEBUG)	:= -DDEBUG
 
-obj-$(CONFIG_MI_FAN)		+= mi_fan.o mi_fan_sysfs.o
+obj-$(CONFIG_MI_FAN_PWM)		+= mi_fan_pwm.o mi_fan_pwm_sysfs.o
 
 
 

@@ -69,11 +69,11 @@
 		gpio = <&expgpio 6 GPIO_ACTIVE_HIGH>;
 	};
 
-	mi_fan: mi_fan {
-		compatible = "mi,mi_fan";
+	mi_fan_pwm: mi_fan_pwm {
+		compatible = "mi,mi_fan_pwm";
 		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&mi_fan_pins_default>;
-		pinctrl-1 = <&mi_fan_pins_sleep>;
+		pinctrl-0 = <&mi_fan_pwm_pins_default>;
+		pinctrl-1 = <&mi_fan_pwm_pins_sleep>;
 
 		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
@@ -427,13 +427,13 @@
 
 &gpio {
 
-	mi_fan_pins_default: mi_fan_pins_default {
+	mi_fan_pwm_pins_default: mi_fan_pwm_pins_default {
 		brcm,pins = <21>;
 		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
 		brcm,pull = <BCM2835_PUD_OFF>;
 	};
 
-	mi_fan_pins_sleep: mi_fan_pins_sleep {
+	mi_fan_pwm_pins_sleep: mi_fan_pwm_pins_sleep {
 		brcm,pins = <21>;
 		brcm,function = <BCM2835_FSEL_GPIO_IN>;
 		brcm,pull = <BCM2835_PUD_UP>;
