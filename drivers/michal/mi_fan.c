@@ -48,8 +48,8 @@ static int mi_fan_probe(struct platform_device *pdev)
 
 	pwm_init_state(priv->pwm, &state);
 
-	/* Set duty cycle to 0 to run the fan at full speed*/
-	state.duty_cycle = 0;
+	/* Set duty cycle to period to run the fan at full speed*/
+	state.duty_cycle = priv->pwm->args.period;
 	state.enabled = true;
 
 	ret = pwm_apply_state(priv->pwm, &state);
@@ -157,7 +157,7 @@ int mi_fan_resume(struct device *dev)
 	dev_info(dev, "%s: resuming", __func__);
 
 	pwm_get_args(priv->pwm, &args);
-	ret = pwm_config(priv->pwm, args.period - 1, args.period);
+	ret = pwm_config(priv->pwm, args.period, args.period);
 	if (ret)
 		return ret;
 	return pwm_enable(priv->pwm);
