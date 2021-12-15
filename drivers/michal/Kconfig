@@ -2,7 +2,10 @@
 #
 # michal drivers configuration
 #
-menuconfig MICHAL_DRIVERS
+
+menu "Michal drivers"
+
+config MICHAL_DRIVERS
 	bool "Michal drivers"
 	help 
 	  Say Y here to enable Michal drivers
@@ -10,14 +13,16 @@ menuconfig MICHAL_DRIVERS
 if MICHAL_DRIVERS
 
 config MI_FAN_PWM
-	tristate "Michal fan driver"
-	help
-	  PWM control of a fan
+        tristate "Michal fan driver"
+        help
+          PWM control of a fan
 
-	  If unsure, say N.
- 
- 	  To comple this driver as a module, choose M here: the
-	  module will be called mi_fan_pwm
+          If unsure, say N.
 
+          To comple this driver as a module, choose M here: the
+          module will be called mi_fan_pwm
 
 endif
+
+#source "drivers/michal/mi_fan_pwm/Kconfig"
+endmenu
