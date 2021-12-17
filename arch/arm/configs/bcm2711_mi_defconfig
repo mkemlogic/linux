@@ -4049,6 +4049,7 @@ CONFIG_PM_OPP=y
 #
 CONFIG_MICHAL_DRIVERS=y
 CONFIG_MI_FAN_PWM=m
+CONFIG_MI_THERMAL_SIMULATOR=m
 # end of Michal drivers
 # end of Device Drivers
 
