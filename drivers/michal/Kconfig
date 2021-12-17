@@ -13,8 +13,8 @@ config MICHAL_DRIVERS
 if MICHAL_DRIVERS
 
 config MI_FAN_PWM
-        tristate "Michal fan driver"
-        help
+	tristate "Michal fan driver"
+	help
           PWM control of a fan
 
           If unsure, say N.
@@ -22,7 +22,15 @@ config MI_FAN_PWM
           To comple this driver as a module, choose M here: the
           module will be called mi_fan_pwm
 
+config MI_THERMAL_SIMULATOR
+	tristate "Michal thermal simulator driver driver
+	help
+	  Simulates a thermal sensor by letting an user to set temp from sysfs
+
+	  If unsure, say N.
+
+	  To comple this driver as a module, choose M here: the
+	  module will be called mi_thermal_simulator
 endif
 
-#source "drivers/michal/mi_fan_pwm/Kconfig"
 endmenu
