@@ -26,19 +26,32 @@ struct mi_thermal_priv {
 	int temp;
 };
 
-int mi_temperature = 30000;
-
-static int mi_thermal_get_temp(void *data, int *temp)
+static int mi_thermal_get_temp(void *drv_data, int *temp)
 {
-	*temp = mi_temperature;
+	struct mi_thermal_priv *priv = container_of(drv_data, struct mi_thermal_priv, pdev);
+
+	*temp = priv->temp;
+
 	return 0;
 }
 
+#if (IS_ENABLED(CONFIG_THERMAL_EMULATION))
+static int mi_thermal_set_emul_temp(void *drv_data, int temp)
+{
+	struct mi_thermal_priv *priv = container_of(drv_data, struct mi_thermal_priv, pdev);
+
+	priv->temp = temp;
+
+	return 0;
+}
+#endif
+
 static const struct thermal_zone_of_device_ops mi_thermal_of_ops = {
 	.get_temp	= mi_thermal_get_temp,
+	.set_emul_temp = (IS_ENABLED(CONFIG_THERMAL_EMULATION)) ? mi_thermal_set_emul_temp : NULL,
 };
 
-
+#if (!IS_ENABLED(CONFIG_THERMAL_EMULATION))
 static ssize_t temp_store(struct device *dev, struct device_attribute *attr,
 					const char *buf, size_t count)
 {
@@ -52,7 +65,6 @@ static ssize_t temp_store(struct device *dev, struct device_attribute *attr,
 		return count;
 
 	priv->temp = temp;
-	mi_temperature = temp;
 
 	return count;
 }
@@ -64,7 +76,7 @@ static struct attribute *mi_thermal_attrs[] = {
 };
 
 ATTRIBUTE_GROUPS(mi_thermal);
-
+#endif /* (!IS_ENABLED(CONFIG_THERMAL_EMULATION)) */
 
 static int mi_thermal_probe(struct platform_device *pdev)
 {
@@ -90,16 +102,27 @@ static int mi_thermal_probe(struct platform_device *pdev)
 	}
 
 	priv->thermal = thermal;
+	priv->temp = 29000;
 
+	/* no_hwmon:
+	 *	a boolean to indicate if the thermal to hwmon sysfs interface
+	 *	is required. when no_hwmon == false, a hwmon sysfs interface
+	 *	will be created. when no_hwmon == true, nothing will be done.
+	 *	In case the thermal_zone_params is NULL, the hwmon interface
+	 *	will be created (for backward compatibility).
+	*/
 	thermal->tzp->no_hwmon = false;
+
 	ret = thermal_add_hwmon_sysfs(thermal);
 	if (ret)
 		return ret;
 
+#if (!IS_ENABLED(CONFIG_THERMAL_EMULATION))
 	ret = sysfs_create_groups(&pdev->dev.kobj, mi_thermal_groups);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to create sysfs attributes\n");
 	}
+#endif
 
 	return 0;
 }
@@ -109,8 +132,9 @@ static int mi_thermal_remove(struct platform_device *pdev)
 	struct mi_thermal_priv *priv = platform_get_drvdata(pdev);
 
 	thermal_remove_hwmon_sysfs(priv->thermal);
-
+#if (!IS_ENABLED(CONFIG_THERMAL_EMULATION))
 	sysfs_remove_group(&pdev->dev.kobj, &mi_thermal_group);
+#endif
 
 	return 0;
 }
