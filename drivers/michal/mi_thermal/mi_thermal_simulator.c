@@ -106,9 +106,13 @@ static int mi_thermal_probe(struct platform_device *pdev)
 
 static int mi_thermal_remove(struct platform_device *pdev)
 {
+	struct mi_thermal_priv *priv = platform_get_drvdata(pdev);
+
+	thermal_remove_hwmon_sysfs(priv->thermal);
+
 	sysfs_remove_group(&pdev->dev.kobj, &mi_thermal_group);
 
-    return 0;
+	return 0;
 }
 
 
