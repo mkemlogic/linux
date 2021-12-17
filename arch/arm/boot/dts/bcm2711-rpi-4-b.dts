@@ -3,6 +3,7 @@
 #include "bcm2711.dtsi"
 #include "bcm2835-rpi.dtsi"
 
+#include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/reset/raspberrypi,firmware-reset.h>
 
 / {
@@ -79,7 +80,47 @@
 
 		pwms = <&pwm 0 500000>;
 		max-brightness = <255>;
+		status = "disabled";
+	};
+
+
+	mi_thermal_sensor_simulator: mi_thermal-sensor-simulator {
+			compatible = "mi,mi-thermal-simulator";
+			#thermal-sensor-cells = <0>;
+	};
+
+
+	fan0: pwm-fan {
+		compatible = "pwm-fan";
+		pwms = <&pwm 0 500000>;
+		#cooling-cells = <2>;
+		cooling-min-state = <0>;
+		cooling-max-state = <1>;
+		cooling-levels = <0 255>;
 		status = "okay";
+	};
+
+	thermal-zones {
+		mi-thermal {
+			polling-delay-passive = <5000>;
+			polling-delay = <1000>;
+			thermal-sensors = <&mi_thermal_sensor_simulator>;
+
+			trips {
+				cpu_hot1: cpu-hot1 {
+					temperature	= <30000>;
+					hysteresis	= <0>;
+					type		= "active";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&cpu_hot1>;
+					cooling-device = <&fan0 0 1>;
+				};
+			};
+		};
 	};
 };
 
