@@ -23,7 +23,7 @@ config MI_FAN_PWM
           module will be called mi_fan_pwm
 
 config MI_THERMAL_SIMULATOR
-	tristate "Michal thermal simulator driver driver
+	tristate "Michal thermal simulator driver"
 	help
 	  Simulates a thermal sensor by letting an user to set temp from sysfs
 
