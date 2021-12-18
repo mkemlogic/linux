@@ -102,7 +102,7 @@ static int mi_thermal_probe(struct platform_device *pdev)
 	}
 
 	priv->thermal = thermal;
-	priv->temp = 29000;
+	priv->temp = 30000;
 
 	/* no_hwmon:
 	 *	a boolean to indicate if the thermal to hwmon sysfs interface
