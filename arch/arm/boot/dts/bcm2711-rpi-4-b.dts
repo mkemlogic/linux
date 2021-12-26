@@ -71,7 +71,7 @@
 	};
 
 	mi_fan_pwm: mi_fan_pwm {
-		compatible = "mi,mi_fan_pwm";
+		compatible = "mi,mi-fan-pwm";
 		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&mi_fan_pwm_pins_default>;
 		pinctrl-1 = <&mi_fan_pwm_pins_sleep>;

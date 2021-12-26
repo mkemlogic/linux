@@ -1,3 +1,33 @@
+/* PWM controlled fan (with one GPIO (21))
+ *
+ *
+ * Device tree bindings
+ *
+	mi_fan_pwm: mi_fan_pwm {
+		compatible = "mi,mi-fan-pwm";
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mi_fan_pwm_pins_default>;
+		pinctrl-1 = <&mi_fan_pwm_pins_sleep>;
+
+		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+
+		status = "okay";
+	};
+
+	mi_fan_pwm_pins_default: mi_fan_pwm_pins_default {
+		brcm,pins = <21>;
+		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
+		brcm,pull = <BCM2835_PUD_OFF>;
+	};
+
+	mi_fan_pwm_pins_sleep: mi_fan_pwm_pins_sleep {
+		brcm,pins = <21>;
+		brcm,function = <BCM2835_FSEL_GPIO_IN>;
+		brcm,pull = <BCM2835_PUD_UP>;
+	};
+ */
+
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -105,28 +135,6 @@ int mi_fan_pwm_suspend(struct device *dev)
 	* is added a default state must be added as well in order for the resume
 	* path to be able to properly reconfigure the pins.
 	*
-	mi_fan_pwm: mi_fan_pwm {
-		compatible = "mi,mi_fan_pwm";
-		pinctrl-names = "default", "sleep";
-		pinctrl-0 = <&mi_fan_pwm_pins_default>;
-		pinctrl-1 = <&mi_fan_pwm_pins_sleep>;
-
-		fan-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
-
-		status = "okay";
-	};
-
-	mi_fan_pwm_pins_default: mi_fan_pwm_pins_default {
-		brcm,pins = <21>;
-		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
-		brcm,pull = <BCM2835_PUD_OFF>;
-	};
-
-	mi_fan_pwm_pins_sleep: mi_fan_pwm_pins_sleep {
-		brcm,pins = <21>;
-		brcm,function = <BCM2835_FSEL_GPIO_IN>;
-		brcm,pull = <BCM2835_PUD_UP>;
-	};
 	*/
 	if (pm_suspend_target_state == PM_SUSPEND_MEM || pm_suspend_target_state == PM_SUSPEND_TO_IDLE){
 		dev_info(dev, "%s: suspending to RAM", __func__);
@@ -174,7 +182,7 @@ static struct dev_pm_ops dev_pm_ops = {
 };
 
 static const struct of_device_id mi_fan_pwm_of_match[] = {
-	{ .compatible = "mi,mi_fan_pwm", },
+	{ .compatible = "mi,mi-fan-pwm", },
 	{}
 };
 MODULE_DEVICE_TABLE(of, mi_fan_pwm_of_match);
