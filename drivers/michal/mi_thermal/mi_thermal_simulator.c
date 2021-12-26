@@ -1,10 +1,29 @@
-// SPDX-License-Identifier: GPL-2.0+
-/*
- * Broadcom AVS RO thermal sensor driver
+/* Temperature sensor emulator
  *
- * based on brcmstb_thermal
+ * - initial temperature is 30degC
+ * - use emul_temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is set)
+ * - use temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is not set)
  *
- * Copyright (C) 2020 Stefan Wahren
+ * Device tree bindings
+ *
+  	mi_thermal_sensor_simulator: mi_thermal-sensor-simulator {
+			compatible = "mi,mi-thermal-simulator";
+			#thermal-sensor-cells = <0>;
+	};
+
+	thermal-zones {
+		mi-thermal {
+			polling-delay-passive = <5000>;
+			polling-delay = <1000>;
+			thermal-sensors = <&mi_thermal_sensor_simulator>;
+
+			trips {
+			};
+
+			cooling-maps {
+			};
+		};
+	};
  */
 
 #include <linux/bitops.h>
@@ -157,5 +176,5 @@ static struct platform_driver mi_thermal_driver = {
 module_platform_driver(mi_thermal_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Stefan Wahren");
-MODULE_DESCRIPTION("Broadcom AVS RO thermal sensor driver");
+MODULE_AUTHOR("Michal Koziel");
+MODULE_DESCRIPTION("Temperature sensor emulator");
