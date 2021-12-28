@@ -3,6 +3,8 @@
  * - initial temperature is 30degC
  * - use emul_temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is set)
  * - use temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is not set)
+ * - send notification when temperature changes
+ * - recevies the above notification (CONFIG_RECEIVE_OWN_NOTOFICATION)
  *
  * Device tree bindings
  *
@@ -36,14 +38,45 @@
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
 #include <linux/thermal.h>
+#include <linux/notifier.h>
 
 #include "../../thermal/thermal_hwmon.h"
+
+#define CONFIG_RECEIVE_OWN_NOTOFICATION 1
 
 struct mi_thermal_priv {
 	struct platform_device *pdev;
 	struct thermal_zone_device *thermal;
 	int temp;
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+	struct notifier_block mi_thermal_notifier;
+#endif
 };
+
+static ATOMIC_NOTIFIER_HEAD(mi_thermal_notifier_chain);
+
+
+int register_mi_thermal_simulator_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_register(&mi_thermal_notifier_chain, nb);
+}
+EXPORT_SYMBOL_GPL(register_mi_thermal_simulator_notifier);
+
+int unregister_mi_thermal_simulator_notifier(struct notifier_block *nb)
+{
+	return atomic_notifier_chain_unregister(&mi_thermal_notifier_chain, nb);
+}
+EXPORT_SYMBOL_GPL(unregister_mi_thermal_simulator_notifier);
+
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+static int irq_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
+{
+	struct mi_thermal_priv *priv = container_of(self, struct mi_thermal_priv, mi_thermal_notifier);
+	dev_err(&priv->pdev->dev, "pr_errnotification received");
+
+	return 	NOTIFY_OK;
+}
+#endif
 
 static int mi_thermal_get_temp(void *drv_data, int *temp)
 {
@@ -60,6 +93,7 @@ static int mi_thermal_set_emul_temp(void *drv_data, int temp)
 	struct mi_thermal_priv *priv = container_of(drv_data, struct mi_thermal_priv, pdev);
 
 	priv->temp = temp;
+	atomic_notifier_call_chain(&mi_thermal_notifier_chain, temp, NULL);
 
 	return 0;
 }
@@ -84,6 +118,7 @@ static ssize_t temp_store(struct device *dev, struct device_attribute *attr,
 		return count;
 
 	priv->temp = temp;
+	atomic_notifier_call_chain(&mi_thermal_notifier_chain, temp, NULL);
 
 	return count;
 }
@@ -111,9 +146,8 @@ static int mi_thermal_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, priv);
 	priv->pdev = pdev;
 
-
 	thermal = devm_thermal_zone_of_sensor_register(dev, 0, priv,
-						       &mi_thermal_of_ops);
+								&mi_thermal_of_ops);
 	if (IS_ERR(thermal)) {
 		ret = PTR_ERR(thermal);
 		dev_err(dev, "could not register sensor: %d\n", ret);
@@ -143,6 +177,11 @@ static int mi_thermal_probe(struct platform_device *pdev)
 	}
 #endif
 
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+	register_mi_thermal_simulator_notifier(&priv->mi_thermal_notifier);
+	priv->mi_thermal_notifier.notifier_call = irq_notifier;
+#endif
+
 	return 0;
 }
 
@@ -153,6 +192,10 @@ static int mi_thermal_remove(struct platform_device *pdev)
 	thermal_remove_hwmon_sysfs(priv->thermal);
 #if (!IS_ENABLED(CONFIG_THERMAL_EMULATION))
 	sysfs_remove_group(&pdev->dev.kobj, &mi_thermal_group);
+#endif
+
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+	unregister_mi_thermal_simulator_notifier(&priv->mi_thermal_notifier);
 #endif
 
 	return 0;
