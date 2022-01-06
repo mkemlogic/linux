@@ -2,7 +2,7 @@
 # Automatically generated file; DO NOT EDIT.
 # Linux/arm 5.10.82 Kernel Configuration
 #
-CONFIG_CC_VERSION_TEXT="arm-poky-linux-gnueabi-gcc (GCC) 11.2.0"
+CONFIG_CC_VERSION_TEXT="arm-mi-linux-gnueabi-gcc (GCC) 11.2.0"
 CONFIG_CC_IS_GCC=y
 CONFIG_GCC_VERSION=110200
 CONFIG_LD_VERSION=202344210000
@@ -4050,6 +4050,7 @@ CONFIG_PM_OPP=y
 CONFIG_MICHAL_DRIVERS=y
 CONFIG_MI_FAN_PWM=m
 CONFIG_MI_THERMAL_SIMULATOR=m
+CONFIG_MI_INPUT_SIMULATOR=m
 # end of Michal drivers
 # end of Device Drivers
 
