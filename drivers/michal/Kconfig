@@ -31,6 +31,16 @@ config MI_THERMAL_SIMULATOR
 
 	  To comple this driver as a module, choose M here: the
 	  module will be called mi_thermal_simulator
+
+config MI_INPUT_SIMULATOR
+	tristate "Michal input simulator driver"
+	help
+	  Simulates an input device by letting an user provide events from sysfs
+
+	  If unsure, say N.
+
+	  To comple this driver as a module, choose M here: the
+	  module will be called mi_input_simulator
 endif
 
 endmenu
