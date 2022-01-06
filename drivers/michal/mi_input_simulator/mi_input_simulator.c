@@ -18,6 +18,7 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
+#include <linux/input.h>
 
 
 
@@ -32,7 +33,11 @@ static ssize_t mi_event_store(struct device *dev, struct device_attribute *attr,
 	struct platform_device *pdev = container_of(dev, struct platform_device, dev);
 	struct mi_input_priv *priv = platform_get_drvdata(pdev);
 	int ret;
-	int temp;
+	long int temp;
+
+
+	input_report_key(priv->input_dev, BTN_0, 1);
+	input_sync(priv->input_dev);
 
 	ret = kstrtol(buf, 10, &temp);
 	if (ret < 0)
@@ -63,16 +68,21 @@ static int mi_input_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, priv);
 	priv->pdev = pdev;
 
-	priv->input_dev = input_allocate_device();
+	priv->input_dev = devm_input_allocate_device(dev);
 	if (!priv->input_dev) {
 		printk(KERN_ERR "button.c: Not enough memory\n");
 		return -ENOMEM;
-    }
+	}
 
+	priv->input_dev->evbit[0] = BIT_MASK(EV_KEY);
+	priv->input_dev->keybit[BIT_WORD(BTN_0)] = BIT_MASK(BTN_0);
 
-	ret = thermal_add_hwmon_sysfs(thermal);
-	if (ret)
+	ret = input_register_device(priv->input_dev);
+
+	if (ret) {
+		printk(KERN_ERR "button.c: Failed to register device\n");
 		return ret;
+	}
 
 	ret = sysfs_create_groups(&pdev->dev.kobj, mi_input_groups);
 	if (ret) {
@@ -86,7 +96,7 @@ static int mi_thermal_remove(struct platform_device *pdev)
 {
 	struct mi_thermal_priv *priv = platform_get_drvdata(pdev);
 
-	sysfs_remove_group(&pdev->dev.kobj, &mi_input_groups);
+	sysfs_remove_group(&pdev->dev.kobj, &mi_input_group);
 
 	return 0;
 }
