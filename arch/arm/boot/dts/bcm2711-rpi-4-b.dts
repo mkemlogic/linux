@@ -84,7 +84,7 @@
 	};
 
 
-	mi_thermal_sensor_simulator: mi_thermal-sensor-simulator {
+	mi_thermal_sensor_simulator: mi_thermal_sensor_simulator {
 			compatible = "mi,mi-thermal-simulator";
 			#thermal-sensor-cells = <0>;
 	};

@@ -8,7 +8,7 @@
  *
  * Device tree bindings
  *
-  	mi_thermal_sensor_simulator: mi_thermal-sensor-simulator {
+  	mi_thermal_sensor_simulator: mi_thermal_sensor_simulator {
 			compatible = "mi,mi-thermal-simulator";
 			#thermal-sensor-cells = <0>;
 	};
@@ -212,7 +212,7 @@ static struct platform_driver mi_thermal_driver = {
 	.probe = mi_thermal_probe,
 	.remove = mi_thermal_remove,
 	.driver = {
-		.name = "mi_thermal",
+		.name = "mi_thermal_simulator",
 		.of_match_table = mi_thermal_id_table,
 	},
 };

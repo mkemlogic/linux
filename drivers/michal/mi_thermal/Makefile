@@ -5,7 +5,7 @@
 
 ccflags-$(CONFIG_MICHAL_DEBUG)	:= -DDEBUG
 
-obj-$(CONFIG_MI_FAN_PWM)		+= mi_thermal_simulator.o
+obj-$(CONFIG_MI_THERMAL_SIMULATOR)		+= mi_thermal_simulator.o
 
 
 
