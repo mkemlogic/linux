@@ -89,6 +89,11 @@
 			#thermal-sensor-cells = <0>;
 	};
 
+	mi_input_simulator: mi_input_simulator {
+			compatible = "mi,mi-input-simulator";
+			status = "okay";
+
+	};
 
 	fan0: pwm-fan {
 		compatible = "pwm-fan";
