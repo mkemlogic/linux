@@ -4,7 +4,7 @@
  * - use emul_temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is set)
  * - use temp in sysfs to set tempareture (if CONFIG_THERMAL_EMULATION is not set)
  * - send notification when temperature changes
- * - recevies the above notification (CONFIG_RECEIVE_OWN_NOTOFICATION)
+ * - recevies the above notification (CONFIG_RECEIVE_OWN_NOTIFICATION)
  *
  * Device tree bindings
  *
@@ -42,13 +42,13 @@
 
 #include "../../thermal/thermal_hwmon.h"
 
-#define CONFIG_RECEIVE_OWN_NOTOFICATION 1
+#define CONFIG_RECEIVE_OWN_NOTIFICATION 1
 
 struct mi_thermal_priv {
 	struct platform_device *pdev;
 	struct thermal_zone_device *thermal;
 	int temp;
-#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTIFICATION)
 	struct notifier_block mi_thermal_notifier;
 #endif
 };
@@ -68,7 +68,7 @@ int unregister_mi_thermal_simulator_notifier(struct notifier_block *nb)
 }
 EXPORT_SYMBOL_GPL(unregister_mi_thermal_simulator_notifier);
 
-#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTIFICATION)
 static int irq_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 {
 	struct mi_thermal_priv *priv = container_of(self, struct mi_thermal_priv, mi_thermal_notifier);
@@ -177,7 +177,7 @@ static int mi_thermal_probe(struct platform_device *pdev)
 	}
 #endif
 
-#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTIFICATION)
 	register_mi_thermal_simulator_notifier(&priv->mi_thermal_notifier);
 	priv->mi_thermal_notifier.notifier_call = irq_notifier;
 #endif
@@ -194,7 +194,7 @@ static int mi_thermal_remove(struct platform_device *pdev)
 	sysfs_remove_group(&pdev->dev.kobj, &mi_thermal_group);
 #endif
 
-#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTOFICATION)
+#if IS_ENABLED(CONFIG_RECEIVE_OWN_NOTIFICATION)
 	unregister_mi_thermal_simulator_notifier(&priv->mi_thermal_notifier);
 #endif
 
