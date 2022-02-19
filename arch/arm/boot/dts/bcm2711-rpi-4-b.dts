@@ -69,7 +69,7 @@
 		enable-active-high;
 		gpio = <&expgpio 6 GPIO_ACTIVE_HIGH>;
 	};
-
+/*
 	mi_fan_pwm: mi_fan_pwm {
 		compatible = "mi,mi-fan-pwm";
 		pinctrl-names = "default", "sleep";
@@ -81,6 +81,19 @@
 		pwms = <&pwm 0 500000>;
 		max-brightness = <255>;
 		status = "disabled";
+	};
+*/
+	reg_mi_fan: reg-mi-fan {
+		compatible = "regulator-fixed";
+		regulator-name = "REG_MI";
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <1000000>;
+		gpio = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+		pinctrl-names = "default", "sleep";
+		pinctrl-0 = <&mi_reg_fan_pins_default>;
+		pinctrl-1 = <&mi_reg_fan_pins_sleep>;
 	};
 
 
@@ -94,7 +107,7 @@
 			status = "okay";
 
 	};
-
+/*
 	fan0: pwm-fan {
 		compatible = "pwm-fan";
 		pwms = <&pwm 0 500000>;
@@ -104,7 +117,7 @@
 		cooling-levels = <0 255>;
 		status = "okay";
 	};
-
+*/
 	thermal-zones {
 		mi-thermal {
 			polling-delay-passive = <5000>;
@@ -118,13 +131,13 @@
 					type		= "active";
 				};
 			};
-
+			/*
 			cooling-maps {
 				map0 {
 					trip = <&cpu_hot1>;
 					cooling-device = <&fan0 0 1>;
 				};
-			};
+			};*/
 		};
 	};
 };
@@ -481,6 +494,18 @@
 
 	mi_fan_pwm_pins_sleep: mi_fan_pwm_pins_sleep {
 		brcm,pins = <21>;
+		brcm,function = <BCM2835_FSEL_GPIO_IN>;
+		brcm,pull = <BCM2835_PUD_UP>;
+	};
+
+	mi_reg_fan_pins_default: mi_reg_fan_pins_default {
+		brcm,pins = <12>;
+		brcm,function = <BCM2835_FSEL_GPIO_OUT>;
+		brcm,pull = <BCM2835_PUD_OFF>;
+	};
+
+	mi_reg_fan_pins_sleep: mi_reg_fan_pins_sleep {
+		brcm,pins = <12>;
 		brcm,function = <BCM2835_FSEL_GPIO_IN>;
 		brcm,pull = <BCM2835_PUD_UP>;
 	};
