@@ -1,5 +1,5 @@
 /* PWM controlled fan (with one GPIO (21))
- *
+ * Runs the fan at full speed, 100% duty cycle
  *
  * Device tree bindings
  *
