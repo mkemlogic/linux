@@ -87,15 +87,16 @@ static bool trb_is_link(union xhci_trb *trb)
 	return TRB_TYPE_LINK_LE32(trb->link.control);
 }
 
-static bool last_trb_on_seg(struct xhci_segment *seg, union xhci_trb *trb)
+static bool last_trb_on_seg(struct xhci_segment *seg,
+			    unsigned int trbs_per_seg, union xhci_trb *trb)
 {
-	return trb == &seg->trbs[TRBS_PER_SEGMENT - 1];
+	return trb == &seg->trbs[trbs_per_seg - 1];
 }
 
 static bool last_trb_on_ring(struct xhci_ring *ring,
 			struct xhci_segment *seg, union xhci_trb *trb)
 {
-	return last_trb_on_seg(seg, trb) && (seg->next == ring->first_seg);
+	return last_trb_on_seg(seg, ring->trbs_per_seg, trb) && (seg->next == ring->first_seg);
 }
 
 static bool link_trb_toggles_cycle(union xhci_trb *trb)
@@ -157,7 +158,8 @@ void inc_deq(struct xhci_hcd *xhci, struct xhci_ring *ring)
 {
 	/* event ring doesn't have link trbs, check for last trb */
 	if (ring->type == TYPE_EVENT) {
-		if (!last_trb_on_seg(ring->deq_seg, ring->dequeue)) {
+		if (!last_trb_on_seg(ring->deq_seg, ring->trbs_per_seg,
+				     ring->dequeue)) {
 			ring->dequeue++;
 			goto out;
 		}
@@ -265,6 +267,12 @@ static inline int room_on_ring(struct xhci_hcd *xhci, struct xhci_ring *ring,
 		return 0;
 
 	if (ring->type != TYPE_COMMAND && ring->type != TYPE_EVENT) {
+		/*
+		 * If the ring has a single segment the dequeue segment
+		 * never changes, so don't use it as measure of free space.
+		 */
+		if (ring->num_segs == 1)
+			return ring->num_trbs_free >= num_trbs;
 		num_trbs_in_deq_seg = ring->dequeue - ring->deq_seg->trbs;
 		if (ring->num_trbs_free < num_trbs + num_trbs_in_deq_seg)
 			return 0;
@@ -342,7 +350,9 @@ static void xhci_handle_stopped_cmd_ring(struct xhci_hcd *xhci,
 /* Must be called with xhci->lock held, releases and aquires lock back */
 static int xhci_abort_cmd_ring(struct xhci_hcd *xhci, unsigned long flags)
 {
-	u32 temp_32;
+	struct xhci_segment *new_seg	= xhci->cmd_ring->deq_seg;
+	union xhci_trb *new_deq		= xhci->cmd_ring->dequeue;
+	u64 crcr;
 	int ret;
 
 	xhci_dbg(xhci, "Abort command ring\n");
@@ -351,13 +361,18 @@ static int xhci_abort_cmd_ring(struct xhci_hcd *xhci, unsigned long flags)
 
 	/*
 	 * The control bits like command stop, abort are located in lower
-	 * dword of the command ring control register. Limit the write
-	 * to the lower dword to avoid corrupting the command ring pointer
-	 * in case if the command ring is stopped by the time upper dword
-	 * is written.
+	 * dword of the command ring control register.
+	 * Some controllers require all 64 bits to be written to abort the ring.
+	 * Make sure the upper dword is valid, pointing to the next command,
+	 * avoiding corrupting the command ring pointer in case the command ring
+	 * is stopped by the time the upper dword is written.
 	 */
-	temp_32 = readl(&xhci->op_regs->cmd_ring);
-	writel(temp_32 | CMD_RING_ABORT, &xhci->op_regs->cmd_ring);
+	next_trb(xhci, NULL, &new_seg, &new_deq);
+	if (trb_is_link(new_deq))
+		next_trb(xhci, NULL, &new_seg, &new_deq);
+
+	crcr = xhci_trb_virt_to_dma(new_seg, new_deq);
+	xhci_write_64(xhci, crcr | CMD_RING_ABORT, &xhci->op_regs->cmd_ring);
 
 	/* Section 4.6.1.2 of xHCI 1.0 spec says software should also time the
 	 * completion of the Command Abort operation. If CRR is not negated in 5
@@ -1301,7 +1316,6 @@ static void xhci_handle_cmd_disable_slot(struct xhci_hcd *xhci, int slot_id)
 	if (xhci->quirks & XHCI_EP_LIMIT_QUIRK)
 		/* Delete default control endpoint resources */
 		xhci_free_device_endpoint_resources(xhci, virt_dev, true);
-	xhci_free_virt_device(xhci, slot_id);
 }
 
 static void xhci_handle_cmd_config_ep(struct xhci_hcd *xhci, int slot_id,
@@ -2970,7 +2984,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
 	 * that clears the EHB.
 	 */
 	while (xhci_handle_event(xhci) > 0) {
-		if (event_loop++ < TRBS_PER_SEGMENT / 2)
+		if (event_loop++ < xhci->event_ring->trbs_per_seg / 2)
 			continue;
 		xhci_update_erst_dequeue(xhci, event_ring_deq);
 		event_loop = 0;
@@ -3400,14 +3414,15 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 	unsigned int num_trbs;
 	unsigned int start_cycle, num_sgs = 0;
 	unsigned int enqd_len, block_len, trb_buff_len, full_len;
-	int sent_len, ret;
-	u32 field, length_field, remainder;
+	int sent_len, ret, vli_quirk = 0;
+	u32 field, length_field, remainder, maxpacket;
 	u64 addr, send_addr;
 
 	ring = xhci_urb_to_transfer_ring(xhci, urb);
 	if (!ring)
 		return -EINVAL;
 
+	maxpacket = usb_endpoint_maxp(&urb->ep->desc);
 	full_len = urb->transfer_buffer_length;
 	/* If we have scatter/gather list, we use it. */
 	if (urb->num_sgs) {
@@ -3444,6 +3459,17 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 	start_cycle = ring->cycle_state;
 	send_addr = addr;
 
+	if (xhci->quirks & XHCI_VLI_SS_BULK_OUT_BUG &&
+	    !usb_urb_dir_in(urb) && urb->dev->speed >= USB_SPEED_SUPER) {
+		/*
+		 * VL805 - superspeed bulk OUT traffic can cause
+		 * an internal fifo overflow if the TRB buffer is larger
+		 * than wMaxPacket and the length is not an integer
+		 * multiple of wMaxPacket.
+		 */
+		vli_quirk = 1;
+	}
+
 	/* Queue the TRBs, even if they are zero-length */
 	for (enqd_len = 0; first_trb || enqd_len < full_len;
 			enqd_len += trb_buff_len) {
@@ -3456,6 +3482,11 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 		if (enqd_len + trb_buff_len > full_len)
 			trb_buff_len = full_len - enqd_len;
 
+		if (vli_quirk && trb_buff_len > maxpacket) {
+			/* SS bulk wMaxPacket is 1024B */
+			remainder = trb_buff_len & (maxpacket - 1);
+			trb_buff_len -= remainder;
+		}
 		/* Don't change the cycle bit of the first TRB until later */
 		if (first_trb) {
 			first_trb = false;

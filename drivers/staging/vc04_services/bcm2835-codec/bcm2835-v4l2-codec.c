@@ -1563,7 +1563,7 @@ static int vidioc_s_fmt(struct bcm2835_codec_ctx *ctx, struct v4l2_format *f,
 	q_data->bytesperline = f->fmt.pix_mp.plane_fmt[0].bytesperline;
 	q_data->sizeimage = f->fmt.pix_mp.plane_fmt[0].sizeimage;
 
-	v4l2_dbg(1, debug, &ctx->dev->v4l2_dev,	"Calulated bpl as %u, size %u\n",
+	v4l2_dbg(1, debug, &ctx->dev->v4l2_dev,	"Calculated bpl as %u, size %u\n",
 		 q_data->bytesperline, q_data->sizeimage);
 
 	if (ctx->dev->role == DECODE &&
@@ -2536,14 +2536,6 @@ static int bcm2835_codec_create_component(struct bcm2835_codec_ctx *ctx)
 					      MMAL_PARAMETER_VIDEO_STOP_ON_PAR_COLOUR_CHANGE,
 					      &enable,
 					      sizeof(enable));
-
-		enable = (unsigned int)-5;
-		vchiq_mmal_port_parameter_set(dev->instance,
-					      &ctx->component->control,
-					      MMAL_PARAMETER_VIDEO_MAX_NUM_CALLBACKS,
-					      &enable,
-					      sizeof(enable));
-
 	} else if (dev->role == DEINTERLACE) {
 		/* Select the default deinterlace algorithm. */
 		int half_framerate = 0;

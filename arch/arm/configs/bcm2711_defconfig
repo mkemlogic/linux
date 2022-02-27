@@ -4839,12 +4839,7 @@ CONFIG_DRM_PANEL=y
 # CONFIG_DRM_PANEL_BOE_TV101WUM_NL6 is not set
 # CONFIG_DRM_PANEL_LVDS is not set
 CONFIG_DRM_PANEL_SIMPLE=m
-# CONFIG_DRM_PANEL_ELIDA_KD35T133 is not set
-# CONFIG_DRM_PANEL_FEIXIN_K101_IM2BA02 is not set
-# CONFIG_DRM_PANEL_FEIYANG_FY07024DI26A30D is not set
-# CONFIG_DRM_PANEL_ILITEK_IL9322 is not set
-# CONFIG_DRM_PANEL_ILITEK_ILI9881C is not set
-# CONFIG_DRM_PANEL_INNOLUX_P079ZCA is not set
+CONFIG_DRM_PANEL_ILITEK_ILI9881C=m
 CONFIG_DRM_PANEL_JDI_LT070ME05000=m
 # CONFIG_DRM_PANEL_KINGDISPLAY_KD097D04 is not set
 # CONFIG_DRM_PANEL_LEADTEK_LTK050H3146W is not set
@@ -5011,15 +5006,7 @@ CONFIG_FB_SIMPLE=y
 CONFIG_FB_SSD1307=m
 # CONFIG_FB_SM712 is not set
 CONFIG_FB_RPISENSE=m
-# end of Frame buffer Devices
-
-#
-# Backlight & LCD device support
-#
-# CONFIG_LCD_CLASS_DEVICE is not set
-CONFIG_BACKLIGHT_CLASS_DEVICE=m
-# CONFIG_BACKLIGHT_KTD253 is not set
-# CONFIG_BACKLIGHT_PWM is not set
+CONFIG_BACKLIGHT_PWM=m
 CONFIG_BACKLIGHT_RPI=m
 # CONFIG_BACKLIGHT_QCOM_WLED is not set
 # CONFIG_BACKLIGHT_ADP8860 is not set
@@ -6010,8 +5997,7 @@ CONFIG_LEDS_TRIGGER_CAMERA=m
 CONFIG_LEDS_TRIGGER_INPUT=y
 CONFIG_LEDS_TRIGGER_PANIC=y
 CONFIG_LEDS_TRIGGER_NETDEV=m
-# CONFIG_LEDS_TRIGGER_PATTERN is not set
-# CONFIG_LEDS_TRIGGER_AUDIO is not set
+CONFIG_LEDS_TRIGGER_PATTERN=m
 CONFIG_LEDS_TRIGGER_ACTPWR=y
 CONFIG_ACCESSIBILITY=y
 # CONFIG_A11Y_BRAILLE_CONSOLE is not set
@@ -6638,118 +6624,7 @@ CONFIG_CCS811=m
 # CONFIG_SCD30_CORE is not set
 CONFIG_SENSIRION_SGP30=m
 CONFIG_SPS30=m
-# CONFIG_VZ89X is not set
-# end of Chemical Sensors
-
-#
-# Hid Sensor IIO Common
-#
-# end of Hid Sensor IIO Common
-
-CONFIG_IIO_MS_SENSORS_I2C=m
-
-#
-# SSP Sensor Common
-#
-# CONFIG_IIO_SSP_SENSORHUB is not set
-# end of SSP Sensor Common
-
-#
-# Digital to analog converters
-#
-# CONFIG_AD5064 is not set
-# CONFIG_AD5360 is not set
-# CONFIG_AD5380 is not set
-# CONFIG_AD5421 is not set
-# CONFIG_AD5446 is not set
-# CONFIG_AD5449 is not set
-# CONFIG_AD5592R is not set
-# CONFIG_AD5593R is not set
-# CONFIG_AD5504 is not set
-# CONFIG_AD5624R_SPI is not set
-# CONFIG_AD5686_SPI is not set
-# CONFIG_AD5696_I2C is not set
-# CONFIG_AD5755 is not set
-# CONFIG_AD5758 is not set
-# CONFIG_AD5761 is not set
-# CONFIG_AD5764 is not set
-# CONFIG_AD5770R is not set
-# CONFIG_AD5791 is not set
-# CONFIG_AD7303 is not set
-# CONFIG_AD8801 is not set
-# CONFIG_DPOT_DAC is not set
-# CONFIG_DS4424 is not set
-# CONFIG_LTC1660 is not set
-# CONFIG_LTC2632 is not set
-# CONFIG_M62332 is not set
-# CONFIG_MAX517 is not set
-# CONFIG_MAX5821 is not set
-# CONFIG_MCP4725 is not set
-# CONFIG_MCP4922 is not set
-# CONFIG_TI_DAC082S085 is not set
-# CONFIG_TI_DAC5571 is not set
-# CONFIG_TI_DAC7311 is not set
-# CONFIG_TI_DAC7612 is not set
-# CONFIG_VF610_DAC is not set
-# end of Digital to analog converters
-
-#
-# IIO dummy driver
-#
-# end of IIO dummy driver
-
-#
-# Frequency Synthesizers DDS/PLL
-#
-
-#
-# Clock Generator/Distribution
-#
-# CONFIG_AD9523 is not set
-# end of Clock Generator/Distribution
-
-#
-# Phase-Locked Loop (PLL) frequency synthesizers
-#
-# CONFIG_ADF4350 is not set
-# CONFIG_ADF4371 is not set
-# end of Phase-Locked Loop (PLL) frequency synthesizers
-# end of Frequency Synthesizers DDS/PLL
-
-#
-# Digital gyroscope sensors
-#
-# CONFIG_ADIS16080 is not set
-# CONFIG_ADIS16130 is not set
-# CONFIG_ADIS16136 is not set
-# CONFIG_ADIS16260 is not set
-# CONFIG_ADXRS290 is not set
-# CONFIG_ADXRS450 is not set
-# CONFIG_BMG160 is not set
-# CONFIG_FXAS21002C is not set
-# CONFIG_MPU3050_I2C is not set
-# CONFIG_IIO_ST_GYRO_3AXIS is not set
-# CONFIG_ITG3200 is not set
-# end of Digital gyroscope sensors
-
-#
-# Health Sensors
-#
-
-#
-# Heart Rate Monitors
-#
-# CONFIG_AFE4403 is not set
-# CONFIG_AFE4404 is not set
-# CONFIG_MAX30100 is not set
-# CONFIG_MAX30102 is not set
-# end of Heart Rate Monitors
-# end of Health Sensors
-
-#
-# Humidity sensors
-#
-# CONFIG_AM2315 is not set
+CONFIG_MAX30102=m
 CONFIG_DHT11=m
 CONFIG_HDC100X=m
 # CONFIG_HDC2010 is not set
